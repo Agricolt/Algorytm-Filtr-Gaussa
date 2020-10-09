@@ -1,0 +1,8 @@
+﻿  dllmain.cpp
+  DLL_C.cpp
+DLL_C.cpp(19): error C2653: 'CDLL_C': is not a class or namespace name
+DLL_C.cpp(20): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+DLL_C.cpp(21): warning C4508: 'CDLL_C': function should return a value; 'void' return type assumed
+DLL_C.cpp(22): error C2617: 'CDLL_C': inconsistent return statement
+  DLL_C.cpp(19): note: see declaration of 'CDLL_C'
+  stdafx.cpp
