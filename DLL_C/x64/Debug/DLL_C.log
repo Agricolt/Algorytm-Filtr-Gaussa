@@ -1,3 +1,8 @@
-﻿  DLL_C.cpp
+﻿  dllmain.cpp
+  stdafx.cpp
+  DLL_C.cpp
+  Generating Code...
+cl : Command line warning D9028: minimal rebuild failure, reverting to normal build
+     Creating library D:\Foldery\backup\Studia\Sem V\JA projekt\Rozjaśnianie_obrazu\x64\Debug\DLL_C.lib and object D:\Foldery\backup\Studia\Sem V\JA projekt\Rozjaśnianie_obrazu\x64\Debug\DLL_C.exp
   DLL_C.vcxproj -> D:\Foldery\backup\Studia\Sem V\JA projekt\Rozjaśnianie_obrazu\x64\Debug\DLL_C.dll
   DLL_C.vcxproj -> D:\Foldery\backup\Studia\Sem V\JA projekt\Rozjaśnianie_obrazu\x64\Debug\DLL_C.pdb (Full PDB)
