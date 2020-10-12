@@ -1,14 +1,4 @@
-#include <iostream>
-#include <Windows.h>
-#include <thread>
-#include <string>
-#include <fstream>
-#include <vector>
-#include <string>
-
-typedef unsigned char uchar;
-typedef unsigned int uint;
-typedef unsigned short ushort;
+#include "MAIN.h"
 
 using namespace std;
 
@@ -32,44 +22,39 @@ void wyswietl_tablice(int ilosc_znakow, char * temp1)
 	cout << "KONIEC" << endl;
 }
 
-int main()
+bool wczytajBitmape(int & width, int & height, int &padding, byte ** b, byte ** g, byte ** r, std::string & komunikat, BITMAPFILEHEADER *header,
+	BITMAPINFOHEADER *info_header)
 {
-	int const MAX_LICZBA_WATKOW = thread::hardware_concurrency();
-	string komunikat = "";
-	komunikat += "Liczba wykrytych watkow: " + to_string(MAX_LICZBA_WATKOW) + "...\n";
 	/*ODCZYT*/
-	ifstream ifs("4k.bmp", ios::binary);
+	ifstream ifs("2x2.bmp", ios::binary);
 	/*Wczytanie naglowka pliku*/
 	char* temp = new char[sizeof(BITMAPFILEHEADER)];
+	if (ifs.good() == false) {
+		komunikat += "Nie udalo sie otworzyc pliku .bmp. Plik nie istnieje badz nie masz wystarczajacych uprawnien\n";
+		return false;
+	}
+	komunikat += "Otwarto blik\n";
 	ifs.read(temp, sizeof(BITMAPFILEHEADER));
-	BITMAPFILEHEADER* header = (BITMAPFILEHEADER*)(temp);
+	header = (BITMAPFILEHEADER*)(temp);
 
 	/*Wczytanie naglowka obrazu*/
 	temp = new char[sizeof(BITMAPINFOHEADER)];
 	ifs.read(temp, sizeof(BITMAPINFOHEADER));
-	BITMAPINFOHEADER* info_header = (BITMAPINFOHEADER*)(temp);
+	info_header = (BITMAPINFOHEADER*)(temp);
 
 	/*Wczytanie bitmapy*/
 	//Obliczenie wyrownania do 4 bitow
-	int padding = 0;
+	padding = 0;
 	if (info_header->biWidth % 4 == 0)
 		padding = 0;
 	else
 		padding += 4 - (info_header->biWidth % 4);
 
-	short width = info_header->biWidth;
-	short height = info_header->biHeight;
+	width = info_header->biWidth;
+	height = info_header->biHeight;
 	short rozmiar_bitmapy_noPadding = height * width;
 	short rozmiar_bitmapy_cala = rozmiar_bitmapy_noPadding + (padding * width);
 	int jeden_wiersz = 3 * width;
-
-	byte ** b = new byte*[height], **g = new byte*[height], **r = new byte*[height]; //4 tablice z kolorami, ostatnia na wszystkie kolory
-	for (int i = 0; i < height; i++)
-	{
-		b[i] = new byte[width];
-		g[i] = new byte[width];
-		r[i] = new byte[width];
-	}
 
 	ifs.seekg(header->bfOffBits, ios::beg); // bfOffBits wskazuje pocz¹tek danych obrazka
 	for (int i = 0; i < height; i++)
@@ -89,29 +74,11 @@ int main()
 	}
 
 	/*KONIEC ODCZYTU*/
+}
 
-	//typedef int(*DOD_PROC)(int, int);
-
-	//HMODULE dll;
-	//DOD_PROC procedura;
-	//if ((dll = LoadLibrary(L"DLL_C.dll")) != NULL)
-	//{
-	//	procedura = (DOD_PROC)GetProcAddress(dll, "dodaj");
-	//	if (procedura != NULL)
-	//	{
-	//		cout << procedura(3, 4);
-	//	}
-	//	FreeLibrary(dll);
-	//}
-
-	for (int i = 0; i < height; i++)
-	{
-		for (int j = 0; j < width; j++)
-		{
-			
-		}
-	}
-
+void zapiszBitmape(int & width, int & height, int &padding, byte ** b, byte ** g, byte ** r, std::string & komunikat, BITMAPFILEHEADER *header,
+	BITMAPINFOHEADER *info_header)
+{
 	/*ZAPIS*/
 	ofstream wy("zapis.bmp", ios::binary);
 	//Zapis naglowka pliku
@@ -119,6 +86,7 @@ int main()
 	//Zapis naglowka bitmapy
 	wy.write((char*)(info_header), sizeof(BITMAPINFOHEADER));
 	//Zapis pixeli bitmapy
+	int jeden_wiersz = width * 3;
 	int ilosc_bajtow = jeden_wiersz * width + padding * width;
 	char * zapis = new char[ilosc_bajtow];
 	int znak = 0;
@@ -139,7 +107,57 @@ int main()
 	}
 	wy.write(zapis, ilosc_bajtow);
 	wy.close();
-	/*KONIEC ZAPISU*/
+}
+
+void wyswietl_tablice_koloru(int height, int width, byte ** temp1)
+{
+	for (int j = 0; j < height; j++)
+	{
+		for (int i = 0; i < width; i++)
+		{
+			std::cout << (short)temp1[j][i] << ", ";
+		}
+		std::cout << std::endl;
+	}
+}
+
+int main()
+{
+	int width = 0, height = 0, padding = 0;
+
+	/*ZAWSZE NAJPIERW CZYTAJ [HEIGHT][WIDTH]*/
+	byte **b = new byte*[height];
+	byte **g = new byte*[height];
+	byte **r = new byte*[height];
+	for (int i = 0; i < height; i++)
+	{
+		b[i] = new byte[width];
+		g[i] = new byte[width];
+		r[i] = new byte[width];
+	}
+
+	std::string komunikat = "Liczba wykrytych watkow: " + to_string(thread::hardware_concurrency()) + "...\n";
+	BITMAPFILEHEADER *header = nullptr;
+	BITMAPINFOHEADER *info_header = nullptr;
+
+	wczytajBitmape(width, height, padding, b, g, r, komunikat, header, info_header);
+	/*Uzycie funkcji z .dll'ek*/
+
+	typedef void(*filtrGaussa)(byte **, byte **, byte **, int, int);
+
+	HMODULE dll;
+	filtrGaussa filtr;
+	if ((dll = LoadLibrary(L"DLL_C.dll")) != NULL)
+	{
+		filtr = (filtrGaussa)GetProcAddress(dll, "filtrGaussa");
+		if (filtr != NULL)
+		{
+			filtr(b, g, r, height, width);
+		}
+		FreeLibrary(dll);
+	}
+
+	zapiszBitmape(width, height, padding, b, g, r, komunikat, header, info_header);
 	/*Usuwanie obiektow z pamieci*/
 	for (int i = 0; i < height; i++)
 	{
