@@ -1,5 +1,6 @@
 #include "MAIN.h"
 
+#define NAZWA_PLIKU "2x2.bmp"
 using namespace std;
 
 /**
@@ -22,20 +23,42 @@ void wyswietl_tablice(int ilosc_znakow, char * temp1)
 	cout << "KONIEC" << endl;
 }
 
-bool wczytajBitmape(int & width, int & height, int &padding, byte ** b, byte ** g, byte ** r, std::string & komunikat, BITMAPFILEHEADER *header,
-	BITMAPINFOHEADER *info_header)
+
+void wyswietl_tablice_koloru(int height, int width, byte * temp1)
+{
+	for (int j = 0; j < height; j++)
+	{
+		for (int i = 0; i < width; i++)
+		{
+			std::cout << (short)temp1[(j*width) + i] << ", ";
+		}
+	}
+}
+
+
+bool wczytajBitmape(int & width, int & height, int &padding, byte * &b, byte * &g, byte * &r, std::string & komunikat, BITMAPFILEHEADER *&header,
+	BITMAPINFOHEADER *&info_header)
 {
 	/*ODCZYT*/
-	ifstream ifs("2x2.bmp", ios::binary);
+	ifstream ifs(NAZWA_PLIKU, ios::binary);
 	/*Wczytanie naglowka pliku*/
 	char* temp = new char[sizeof(BITMAPFILEHEADER)];
 	if (ifs.good() == false) {
-		komunikat += "Nie udalo sie otworzyc pliku .bmp. Plik nie istnieje badz nie masz wystarczajacych uprawnien\n";
+		komunikat += "Nie udalo sie otworzyc pliku .bmp. Plik nie istnieje badz nie masz wystarczajacych uprawnien. Anulowanie.\n";
 		return false;
 	}
-	komunikat += "Otwarto blik\n";
+	komunikat += "Otwarto plik\n";
 	ifs.read(temp, sizeof(BITMAPFILEHEADER));
 	header = (BITMAPFILEHEADER*)(temp);
+	byte c1, c2;
+	c1 = (header->bfType) & 0xFF;	//Wyciagnij pierwszy bajt
+	c2 = ((header->bfType) >> 8) & 0xFF;//Wyciagnij drugi bajt
+	if (c1 == 'B' && c2 == 'M')
+		komunikat += "Plik jest plikiem w formacie .bmp\n";
+	else {
+		komunikat += "Plik nie jest plikiem w formacie .bmp. Anulowanie";
+		return false;
+	}
 
 	/*Wczytanie naglowka obrazu*/
 	temp = new char[sizeof(BITMAPINFOHEADER)];
@@ -56,28 +79,40 @@ bool wczytajBitmape(int & width, int & height, int &padding, byte ** b, byte ** 
 	short rozmiar_bitmapy_cala = rozmiar_bitmapy_noPadding + (padding * width);
 	int jeden_wiersz = 3 * width;
 
+	b = new byte[height*width];
+	g = new byte[height*width];
+	r = new byte[height*width];
+
 	ifs.seekg(header->bfOffBits, ios::beg); // bfOffBits wskazuje pocz¹tek danych obrazka
 	for (int i = 0; i < height; i++)
 	{
-		int wiersz = 0;
+		int pixel = 0;
 		char * temp1 = new char[jeden_wiersz];
 		ifs.read(temp1, jeden_wiersz);
 		ifs.seekg(padding, std::ios::cur);
 		byte *temp2 = (byte*)(temp1);
 		for (int k = 0; k < jeden_wiersz; k = k + 3)
 		{
-			b[i][wiersz] = temp2[k];
-			g[i][wiersz] = temp2[k + 1];
-			r[i][wiersz] = temp2[k + 2];
-			wiersz++;
+			/*tablica 2-wymiarowa w jednowymiarowej i - ktory wiersz iterujemy * szerokosc wiersza (tyle przeskakujemy)
+			+ indeks danej
+			np. dla bitmapy 2x2
+			i = 0 (wiersz zerowy (najnizszy)
+			width = szerokosc obrazka (wiersza) w pixelach = 2
+			i*width = 0 czyli zerowy wiersz
+			+pixel = 0 czyli element [0][0] */
+			b[(i*width) + pixel] = temp2[k];
+			g[(i*width) + pixel] = temp2[k + 1];
+			r[(i*width) + pixel] = temp2[k + 2];
+			pixel++;
 		}
 	}
-
+	return true;
 	/*KONIEC ODCZYTU*/
 }
 
-void zapiszBitmape(int & width, int & height, int &padding, byte ** b, byte ** g, byte ** r, std::string & komunikat, BITMAPFILEHEADER *header,
-	BITMAPINFOHEADER *info_header)
+
+bool zapiszBitmape(int & width, int & height, int &padding, byte * &b, byte * &g, byte * &r, std::string & komunikat, BITMAPFILEHEADER *&header,
+	BITMAPINFOHEADER *&info_header)
 {
 	/*ZAPIS*/
 	ofstream wy("zapis.bmp", ios::binary);
@@ -94,9 +129,9 @@ void zapiszBitmape(int & width, int & height, int &padding, byte ** b, byte ** g
 	{
 		for (int j = 0; j < width; j++)
 		{
-			zapis[znak] = b[i][j];
-			zapis[znak + 1] = g[i][j];
-			zapis[znak + 2] = r[i][j];
+			zapis[znak] = b[(i*width) +j];
+			zapis[znak + 1] = g[(i*width) + j];
+			zapis[znak + 2] = r[(i*width) + j];
 			znak += 3;
 		}
 		for (int j = 0; j < padding; j++)
@@ -107,43 +142,29 @@ void zapiszBitmape(int & width, int & height, int &padding, byte ** b, byte ** g
 	}
 	wy.write(zapis, ilosc_bajtow);
 	wy.close();
+	return true;
 }
 
-void wyswietl_tablice_koloru(int height, int width, byte ** temp1)
+
+void utworzWatki(int ilosc_watkow, std::thread *& tab)
 {
-	for (int j = 0; j < height; j++)
-	{
-		for (int i = 0; i < width; i++)
-		{
-			std::cout << (short)temp1[j][i] << ", ";
-		}
-		std::cout << std::endl;
-	}
+	tab = new std::thread[ilosc_watkow];
 }
 
 int main()
 {
+	byte *b = nullptr;
+	byte *g = nullptr;
+	byte *r = nullptr;
 	int width = 0, height = 0, padding = 0;
-
-	/*ZAWSZE NAJPIERW CZYTAJ [HEIGHT][WIDTH]*/
-	byte **b = new byte*[height];
-	byte **g = new byte*[height];
-	byte **r = new byte*[height];
-	for (int i = 0; i < height; i++)
-	{
-		b[i] = new byte[width];
-		g[i] = new byte[width];
-		r[i] = new byte[width];
-	}
-
-	std::string komunikat = "Liczba wykrytych watkow: " + to_string(thread::hardware_concurrency()) + "...\n";
+	std::string komunikat = "Liczba wykrytych watkow: " + to_string(thread::hardware_concurrency()) + "\n";
 	BITMAPFILEHEADER *header = nullptr;
 	BITMAPINFOHEADER *info_header = nullptr;
 
 	wczytajBitmape(width, height, padding, b, g, r, komunikat, header, info_header);
-	/*Uzycie funkcji z .dll'ek*/
 
-	typedef void(*filtrGaussa)(byte **, byte **, byte **, int, int);
+	/*Uzycie funkcji z .dll'ek*/
+	typedef void(*filtrGaussa)(byte *, byte *, byte *, int, int);
 
 	HMODULE dll;
 	filtrGaussa filtr;
@@ -156,15 +177,8 @@ int main()
 		}
 		FreeLibrary(dll);
 	}
-
 	zapiszBitmape(width, height, padding, b, g, r, komunikat, header, info_header);
 	/*Usuwanie obiektow z pamieci*/
-	for (int i = 0; i < height; i++)
-	{
-		delete[] b[i];
-		delete[] g[i];
-		delete[] r[i];
-	}
 	delete[] b;
 	delete[] g;
 	delete[] r;
