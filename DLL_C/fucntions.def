@@ -1,3 +1,4 @@
 LIBRARY "DLL_C"
 EXPORTS
 dodaj
+filtrGaussa

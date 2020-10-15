@@ -3,8 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Rozjaśnianie_obrazu", "Rozjaśnianie_obrazu\Rozjaśnianie_obrazu.vcxproj", "{68216995-FE83-4628-9E11-2343DBB06D90}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Gauss", "Rozjaśnianie_obrazu\Rozjaśnianie_obrazu.vcxproj", "{68216995-FE83-4628-9E11-2343DBB06D90}"
 	ProjectSection(ProjectDependencies) = postProject
+		{52FD7907-2D85-49F3-856C-CA10C2C0D5DB} = {52FD7907-2D85-49F3-856C-CA10C2C0D5DB}
 		{8CC1B61A-9D71-42EE-9E0F-5E51F0B8FB39} = {8CC1B61A-9D71-42EE-9E0F-5E51F0B8FB39}
 	EndProjectSection
 EndProject
