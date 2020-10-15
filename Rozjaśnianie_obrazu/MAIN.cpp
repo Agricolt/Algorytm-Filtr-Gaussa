@@ -1,14 +1,4 @@
-#include <iostream>
-#include <Windows.h>
-#include <thread>
-#include <string>
-#include <fstream>
-#include <vector>
-#include <string>
-
-typedef unsigned char uchar;
-typedef unsigned int uint;
-typedef unsigned short ushort;
+#include "MAIN.h"
 
 using namespace std;
 
@@ -32,86 +22,85 @@ void wyswietl_tablice(int ilosc_znakow, char * temp1)
 	cout << "KONIEC" << endl;
 }
 
-int main()
+
+void wyswietl_tablice_koloru(int height, int width, byte * temp1)
 {
-	int const MAX_LICZBA_WATKOW = thread::hardware_concurrency();
-	string komunikat = "";
-	komunikat += "Liczba wykrytych watkow: " + to_string(MAX_LICZBA_WATKOW) + "...\n";
+	for (int j = 0; j < height*width*3; j++)
+	{
+		std::cout << (short)temp1[j] << ", ";
+	}
+	std::cout << std::endl;
+}
+
+
+bool wczytajBitmape(int &width, int &height, int &padding, byte *&bgr, std::string &komunikat, BITMAPFILEHEADER *&header,
+	BITMAPINFOHEADER *&info_header)
+{
 	/*ODCZYT*/
-	ifstream ifs("4k.bmp", ios::binary);
+	ifstream ifs(NAZWA_PLIKU, ios::binary);
 	/*Wczytanie naglowka pliku*/
 	char* temp = new char[sizeof(BITMAPFILEHEADER)];
+	if (ifs.good() == false) {
+		komunikat += "Nie udalo sie otworzyc pliku .bmp. Plik nie istnieje badz nie masz wystarczajacych uprawnien. Anulowanie.\n";
+		return false;
+	}
+	komunikat += "Otwarto plik\n";
 	ifs.read(temp, sizeof(BITMAPFILEHEADER));
-	BITMAPFILEHEADER* header = (BITMAPFILEHEADER*)(temp);
+	header = (BITMAPFILEHEADER*)(temp);
+
+	/*Sprawdz czy jest to blik .bmp (2 pierwsze bajty to litery B i M*/
+	byte c1, c2;
+	c1 = (header->bfType) & 0xFF;	//Wyciagnij pierwszy bajt
+	c2 = ((header->bfType) >> 8) & 0xFF;//Wyciagnij drugi bajt
+	if (c1 == 'B' && c2 == 'M')
+		komunikat += "Plik jest plikiem w formacie .bmp\n";
+	else {
+		komunikat += "Plik nie jest plikiem w formacie .bmp. Anulowanie";
+		return false;
+	}
 
 	/*Wczytanie naglowka obrazu*/
 	temp = new char[sizeof(BITMAPINFOHEADER)];
 	ifs.read(temp, sizeof(BITMAPINFOHEADER));
-	BITMAPINFOHEADER* info_header = (BITMAPINFOHEADER*)(temp);
+	info_header = (BITMAPINFOHEADER*)(temp);
 
 	/*Wczytanie bitmapy*/
 	//Obliczenie wyrownania do 4 bitow
-	int padding = 0;
+	padding = 0;
 	if (info_header->biWidth % 4 == 0)
 		padding = 0;
 	else
-		padding += 4 - (info_header->biWidth % 4);
+		padding += 4 - ((info_header->biWidth*3) % 4);
 
-	short width = info_header->biWidth;
-	short height = info_header->biHeight;
+	width = info_header->biWidth;
+	height = info_header->biHeight;
 	short rozmiar_bitmapy_noPadding = height * width;
 	short rozmiar_bitmapy_cala = rozmiar_bitmapy_noPadding + (padding * width);
-	int jeden_wiersz = 3 * width;
+	int jeden_wiersz = 3 * width; //3 piksele razy dlugosc jednego wiersza
 
-	byte ** b = new byte*[height], **g = new byte*[height], **r = new byte*[height]; //4 tablice z kolorami, ostatnia na wszystkie kolory
-	for (int i = 0; i < height; i++)
-	{
-		b[i] = new byte[width];
-		g[i] = new byte[width];
-		r[i] = new byte[width];
-	}
-
+	/*Tablica przechowuje informacje o pikselach od do³u prawego do góry lewego w formacie b, g, r, b, g, r itd.*/
+	bgr = new byte[height*width*3];
 	ifs.seekg(header->bfOffBits, ios::beg); // bfOffBits wskazuje pocz¹tek danych obrazka
+
 	for (int i = 0; i < height; i++)
 	{
-		int wiersz = 0;
 		char * temp1 = new char[jeden_wiersz];
 		ifs.read(temp1, jeden_wiersz);
 		ifs.seekg(padding, std::ios::cur);
 		byte *temp2 = (byte*)(temp1);
-		for (int k = 0; k < jeden_wiersz; k = k + 3)
+		for (int j = 0; j < jeden_wiersz; j++)
 		{
-			b[i][wiersz] = temp2[k];
-			g[i][wiersz] = temp2[k + 1];
-			r[i][wiersz] = temp2[k + 2];
-			wiersz++;
+			bgr[j + i*jeden_wiersz] = temp2[j];
 		}
 	}
-
+	return true;
 	/*KONIEC ODCZYTU*/
+}
 
-	//typedef int(*DOD_PROC)(int, int);
 
-	//HMODULE dll;
-	//DOD_PROC procedura;
-	//if ((dll = LoadLibrary(L"DLL_C.dll")) != NULL)
-	//{
-	//	procedura = (DOD_PROC)GetProcAddress(dll, "dodaj");
-	//	if (procedura != NULL)
-	//	{
-	//		cout << procedura(3, 4);
-	//	}
-	//	FreeLibrary(dll);
-	//}
-
-	for (int i = 0; i < height; i++)
-	{
-		for (int j = 0; j < width; j++)
-		{
-			
-		}
-	}
-
+bool zapiszBitmape(int &width, int &height, int &padding, byte *&bgr, std::string &komunikat, BITMAPFILEHEADER *&header,
+	BITMAPINFOHEADER *&info_header)
+{
 	/*ZAPIS*/
 	ofstream wy("zapis.bmp", ios::binary);
 	//Zapis naglowka pliku
@@ -119,40 +108,80 @@ int main()
 	//Zapis naglowka bitmapy
 	wy.write((char*)(info_header), sizeof(BITMAPINFOHEADER));
 	//Zapis pixeli bitmapy
+	int jeden_wiersz = width * 3;
 	int ilosc_bajtow = jeden_wiersz * width + padding * width;
 	char * zapis = new char[ilosc_bajtow];
-	int znak = 0;
+
+	int ktora_linia = 0;
 	for (int i = 0; i < height; i++)
 	{
-		for (int j = 0; j < width; j++)
+		for (int j = 0; j < jeden_wiersz; j++)
 		{
-			zapis[znak] = b[i][j];
-			zapis[znak + 1] = g[i][j];
-			zapis[znak + 2] = r[i][j];
-			znak += 3;
+			zapis[j + i*jeden_wiersz] = bgr[j + i*jeden_wiersz];
+			ktora_linia = j + i*jeden_wiersz;
 		}
-		for (int j = 0; j < padding; j++)
+		for (int j = 1; j <= padding; j++)
 		{
-			znak++;
-			zapis[znak + j] = 0;
+			zapis[ktora_linia + j] = 0;
 		}
 	}
 	wy.write(zapis, ilosc_bajtow);
 	wy.close();
-	/*KONIEC ZAPISU*/
-	/*Usuwanie obiektow z pamieci*/
-	for (int i = 0; i < height; i++)
-	{
-		delete[] b[i];
-		delete[] g[i];
-		delete[] r[i];
+	return true;
+}
+
+
+void utworzWatki(byte ilosc_watkow, byte *bgr, int height, int width)
+{
+	HMODULE dll;
+	filtrGaussa filtr;
+	std::thread *tab = new std::thread[ilosc_watkow];
+
+	int na_jeden_watek = height * width * 3 / ilosc_watkow; //50*50 * 3/4 = 1875
+	int reszta = height % ilosc_watkow; //50%4 = 2
+	//Tablice tablic podzielonych danych ktore zostana przekazane do funkcji rozmycia
+
+	if ((dll = LoadLibrary(L"DLL_C.dll")) != NULL){
+		filtr = (filtrGaussa)GetProcAddress(dll, "filtrGaussa");
+		if (filtr != NULL){
+			/*Jesli poprawnie wczytano biblioteke i odnaleziono funkcje to kontynuuj*/
+			tab = new std::thread[ilosc_watkow];
+			int od = 0, to = 0;
+			for (int i = 0, j = 0; i < ilosc_watkow, j < (height * width * 3); i++, j += na_jeden_watek)
+			{
+				od = j;
+				to = j + na_jeden_watek;
+				tab[i] = std::thread(filtr, bgr, height, width, od, to);
+			}
+			for (int i = 0; i < ilosc_watkow; i++)
+			{
+				tab[i].join();
+			}
+		}
 	}
-	delete[] b;
-	delete[] g;
-	delete[] r;
+}
+
+int main()
+{
+	std::clock_t start = std::clock();
+	byte *bgr = nullptr;
+	int width = 0, height = 0, padding = 0;
+	byte watki = 1; // thread::hardware_concurrency(); //rowzniez mozliwosc podania liczby watkow przez uzytkownika
+	std::string komunikat = "Liczba wykrytych watkow: " + to_string(watki) + "\n";
+	BITMAPFILEHEADER *header = nullptr;
+	BITMAPINFOHEADER *info_header = nullptr;
+
+	wczytajBitmape(width, height, padding, bgr, komunikat, header, info_header);
+
+	utworzWatki(watki, bgr, height, width);
+
+	zapiszBitmape(width, height, padding, bgr, komunikat, header, info_header);
+	/*Usuwanie obiektow z pamieci*/
+	delete[] bgr;
 	delete header;
 	delete info_header;
 	/*Koniec usuwania*/
 	cout << komunikat;
+	std::cout << "Czas wykonania programu: " << (1000 * (std::clock() - start) / CLOCKS_PER_SEC) << std::endl;
 	getchar();
 }
