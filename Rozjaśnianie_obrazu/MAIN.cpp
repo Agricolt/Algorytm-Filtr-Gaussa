@@ -1,6 +1,5 @@
 #include "MAIN.h"
 
-#define NAZWA_PLIKU "2x2.bmp"
 using namespace std;
 
 /**
@@ -26,17 +25,15 @@ void wyswietl_tablice(int ilosc_znakow, char * temp1)
 
 void wyswietl_tablice_koloru(int height, int width, byte * temp1)
 {
-	for (int j = 0; j < height; j++)
+	for (int j = 0; j < height*width*3; j++)
 	{
-		for (int i = 0; i < width; i++)
-		{
-			std::cout << (short)temp1[(j*width) + i] << ", ";
-		}
+		std::cout << (short)temp1[j] << ", ";
 	}
+	std::cout << std::endl;
 }
 
 
-bool wczytajBitmape(int & width, int & height, int &padding, byte * &b, byte * &g, byte * &r, std::string & komunikat, BITMAPFILEHEADER *&header,
+bool wczytajBitmape(int &width, int &height, int &padding, byte *&bgr, std::string &komunikat, BITMAPFILEHEADER *&header,
 	BITMAPINFOHEADER *&info_header)
 {
 	/*ODCZYT*/
@@ -50,6 +47,8 @@ bool wczytajBitmape(int & width, int & height, int &padding, byte * &b, byte * &
 	komunikat += "Otwarto plik\n";
 	ifs.read(temp, sizeof(BITMAPFILEHEADER));
 	header = (BITMAPFILEHEADER*)(temp);
+
+	/*Sprawdz czy jest to blik .bmp (2 pierwsze bajty to litery B i M*/
 	byte c1, c2;
 	c1 = (header->bfType) & 0xFF;	//Wyciagnij pierwszy bajt
 	c2 = ((header->bfType) >> 8) & 0xFF;//Wyciagnij drugi bajt
@@ -71,39 +70,27 @@ bool wczytajBitmape(int & width, int & height, int &padding, byte * &b, byte * &
 	if (info_header->biWidth % 4 == 0)
 		padding = 0;
 	else
-		padding += 4 - (info_header->biWidth % 4);
+		padding += 4 - ((info_header->biWidth*3) % 4);
 
 	width = info_header->biWidth;
 	height = info_header->biHeight;
 	short rozmiar_bitmapy_noPadding = height * width;
 	short rozmiar_bitmapy_cala = rozmiar_bitmapy_noPadding + (padding * width);
-	int jeden_wiersz = 3 * width;
+	int jeden_wiersz = 3 * width; //3 piksele razy dlugosc jednego wiersza
 
-	b = new byte[height*width];
-	g = new byte[height*width];
-	r = new byte[height*width];
-
+	/*Tablica przechowuje informacje o pikselach od do³u prawego do góry lewego w formacie b, g, r, b, g, r itd.*/
+	bgr = new byte[height*width*3];
 	ifs.seekg(header->bfOffBits, ios::beg); // bfOffBits wskazuje pocz¹tek danych obrazka
+
 	for (int i = 0; i < height; i++)
 	{
-		int pixel = 0;
 		char * temp1 = new char[jeden_wiersz];
 		ifs.read(temp1, jeden_wiersz);
 		ifs.seekg(padding, std::ios::cur);
 		byte *temp2 = (byte*)(temp1);
-		for (int k = 0; k < jeden_wiersz; k = k + 3)
+		for (int j = 0; j < jeden_wiersz; j++)
 		{
-			/*tablica 2-wymiarowa w jednowymiarowej i - ktory wiersz iterujemy * szerokosc wiersza (tyle przeskakujemy)
-			+ indeks danej
-			np. dla bitmapy 2x2
-			i = 0 (wiersz zerowy (najnizszy)
-			width = szerokosc obrazka (wiersza) w pixelach = 2
-			i*width = 0 czyli zerowy wiersz
-			+pixel = 0 czyli element [0][0] */
-			b[(i*width) + pixel] = temp2[k];
-			g[(i*width) + pixel] = temp2[k + 1];
-			r[(i*width) + pixel] = temp2[k + 2];
-			pixel++;
+			bgr[j + i*jeden_wiersz] = temp2[j];
 		}
 	}
 	return true;
@@ -111,7 +98,7 @@ bool wczytajBitmape(int & width, int & height, int &padding, byte * &b, byte * &
 }
 
 
-bool zapiszBitmape(int & width, int & height, int &padding, byte * &b, byte * &g, byte * &r, std::string & komunikat, BITMAPFILEHEADER *&header,
+bool zapiszBitmape(int &width, int &height, int &padding, byte *&bgr, std::string &komunikat, BITMAPFILEHEADER *&header,
 	BITMAPINFOHEADER *&info_header)
 {
 	/*ZAPIS*/
@@ -124,20 +111,18 @@ bool zapiszBitmape(int & width, int & height, int &padding, byte * &b, byte * &g
 	int jeden_wiersz = width * 3;
 	int ilosc_bajtow = jeden_wiersz * width + padding * width;
 	char * zapis = new char[ilosc_bajtow];
-	int znak = 0;
+
+	int ktora_linia = 0;
 	for (int i = 0; i < height; i++)
 	{
-		for (int j = 0; j < width; j++)
+		for (int j = 0; j < jeden_wiersz; j++)
 		{
-			zapis[znak] = b[(i*width) +j];
-			zapis[znak + 1] = g[(i*width) + j];
-			zapis[znak + 2] = r[(i*width) + j];
-			znak += 3;
+			zapis[j + i*jeden_wiersz] = bgr[j + i*jeden_wiersz];
+			ktora_linia = j + i*jeden_wiersz;
 		}
-		for (int j = 0; j < padding; j++)
+		for (int j = 1; j <= padding; j++)
 		{
-			znak++;
-			zapis[znak + j] = 0;
+			zapis[ktora_linia + j] = 0;
 		}
 	}
 	wy.write(zapis, ilosc_bajtow);
@@ -146,45 +131,57 @@ bool zapiszBitmape(int & width, int & height, int &padding, byte * &b, byte * &g
 }
 
 
-void utworzWatki(int ilosc_watkow, std::thread *& tab)
+void utworzWatki(byte ilosc_watkow, byte *bgr, int height, int width)
 {
-	tab = new std::thread[ilosc_watkow];
+	HMODULE dll;
+	filtrGaussa filtr;
+	std::thread *tab = new std::thread[ilosc_watkow];
+
+	int na_jeden_watek = height * width * 3 / ilosc_watkow; //50*50 * 3/4 = 1875
+	int reszta = height % ilosc_watkow; //50%4 = 2
+	//Tablice tablic podzielonych danych ktore zostana przekazane do funkcji rozmycia
+
+	if ((dll = LoadLibrary(L"DLL_C.dll")) != NULL){
+		filtr = (filtrGaussa)GetProcAddress(dll, "filtrGaussa");
+		if (filtr != NULL){
+			/*Jesli poprawnie wczytano biblioteke i odnaleziono funkcje to kontynuuj*/
+			tab = new std::thread[ilosc_watkow];
+			int od = 0, to = 0;
+			for (int i = 0, j = 0; i < ilosc_watkow, j < (height * width * 3); i++, j += na_jeden_watek)
+			{
+				od = j;
+				to = j + na_jeden_watek;
+				tab[i] = std::thread(filtr, bgr, height, width, od, to);
+			}
+			for (int i = 0; i < ilosc_watkow; i++)
+			{
+				tab[i].join();
+			}
+		}
+	}
 }
 
 int main()
 {
-	byte *b = nullptr;
-	byte *g = nullptr;
-	byte *r = nullptr;
+	std::clock_t start = std::clock();
+	byte *bgr = nullptr;
 	int width = 0, height = 0, padding = 0;
-	std::string komunikat = "Liczba wykrytych watkow: " + to_string(thread::hardware_concurrency()) + "\n";
+	byte watki = 1; // thread::hardware_concurrency(); //rowzniez mozliwosc podania liczby watkow przez uzytkownika
+	std::string komunikat = "Liczba wykrytych watkow: " + to_string(watki) + "\n";
 	BITMAPFILEHEADER *header = nullptr;
 	BITMAPINFOHEADER *info_header = nullptr;
 
-	wczytajBitmape(width, height, padding, b, g, r, komunikat, header, info_header);
+	wczytajBitmape(width, height, padding, bgr, komunikat, header, info_header);
 
-	/*Uzycie funkcji z .dll'ek*/
-	typedef void(*filtrGaussa)(byte *, byte *, byte *, int, int);
+	utworzWatki(watki, bgr, height, width);
 
-	HMODULE dll;
-	filtrGaussa filtr;
-	if ((dll = LoadLibrary(L"DLL_C.dll")) != NULL)
-	{
-		filtr = (filtrGaussa)GetProcAddress(dll, "filtrGaussa");
-		if (filtr != NULL)
-		{
-			filtr(b, g, r, height, width);
-		}
-		FreeLibrary(dll);
-	}
-	zapiszBitmape(width, height, padding, b, g, r, komunikat, header, info_header);
+	zapiszBitmape(width, height, padding, bgr, komunikat, header, info_header);
 	/*Usuwanie obiektow z pamieci*/
-	delete[] b;
-	delete[] g;
-	delete[] r;
+	delete[] bgr;
 	delete header;
 	delete info_header;
 	/*Koniec usuwania*/
 	cout << komunikat;
+	std::cout << "Czas wykonania programu: " << (1000 * (std::clock() - start) / CLOCKS_PER_SEC) << std::endl;
 	getchar();
 }

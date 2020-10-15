@@ -12,15 +12,17 @@
 #endif
 
 #include <iostream>
+#include <ctime>
+#include <cstdio>
 
 typedef unsigned char byte;
 
 /*FUNKCJE NIE EKSPORTOWANE NA ZEWNATRZ DLL*/
-void wyswietl_tablice_koloru(int height, int width, byte * temp1);
+void wyswietl_tablice_koloru(int od, int to, byte * temp1);
 /**************************************/
 
 /*FUNCKJE ESKPORTOWANIE NA ZEWNATRZ DLL*/
 int DLL_C_API dodaj(int x, int y);
 
-void DLL_C_API filtrGaussa(byte *b, byte *g, byte *r, int height, int width);
+void DLL_C_API filtrGaussa(byte *bgr, int height, int width, int od, int to);
 /***************************************/
