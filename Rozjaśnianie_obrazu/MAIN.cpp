@@ -131,31 +131,58 @@ bool zapiszBitmape(int &width, int &height, int &padding, byte *&bgr, std::strin
 }
 
 
-void utworzWatki(byte ilosc_watkow, byte *bgr, int height, int width)
+//ktora_biblioteka = true - DLL_C
+//ktora_biblioteka = false - DLL_ASM
+void utworzWatki(byte ilosc_watkow, byte *bgr, int height, int width, bool ktora_biblioteka)
 {
-	HMODULE dll;
-	filtrGaussa filtr;
+	HMODULE dll_c, dll_asm;
+	filtrGaussaC filtr_c;
+	filtrGaussaAsm filtr_asm;
 	std::thread *tab = new std::thread[ilosc_watkow];
 
 	int na_jeden_watek = height * width * 3 / ilosc_watkow; //50*50 * 3/4 = 1875
 	int reszta = height % ilosc_watkow; //50%4 = 2
-	//Tablice tablic podzielonych danych ktore zostana przekazane do funkcji rozmycia
 
-	if ((dll = LoadLibrary(L"DLL_C.dll")) != NULL){
-		filtr = (filtrGaussa)GetProcAddress(dll, "filtrGaussa");
-		if (filtr != NULL){
-			/*Jesli poprawnie wczytano biblioteke i odnaleziono funkcje to kontynuuj*/
-			tab = new std::thread[ilosc_watkow];
-			int od = 0, to = 0;
-			for (int i = 0, j = 0; i < ilosc_watkow, j < (height * width * 3); i++, j += na_jeden_watek)
-			{
-				od = j;
-				to = j + na_jeden_watek;
-				tab[i] = std::thread(filtr, bgr, height, width, od, to);
+	//Tablice tablic podzielonych danych ktore zostana przekazane do funkcji rozmycia
+	if (ktora_biblioteka == true)
+	{
+		if ((dll_c = LoadLibrary(L"DLL_C.dll")) != NULL) {
+			filtr_c = (filtrGaussaC)GetProcAddress(dll_c, "filtrGaussa");
+			if (filtr_c != NULL) {
+				/*Jesli poprawnie wczytano biblioteke i odnaleziono funkcje to kontynuuj*/
+				tab = new std::thread[ilosc_watkow];
+				int od = 0, to = 0;
+				for (int i = 0, j = 0; i < ilosc_watkow, j < (height * width * 3); i++, j += na_jeden_watek)
+				{
+					od = j;
+					to = j + na_jeden_watek;
+					tab[i] = std::thread(filtr_c, bgr, height, width, od, to);
+				}
+				for (int i = 0; i < ilosc_watkow; i++)
+				{
+					tab[i].join();
+				}
 			}
-			for (int i = 0; i < ilosc_watkow; i++)
-			{
-				tab[i].join();
+		}
+	}
+	else
+	{
+		if ((dll_asm = LoadLibrary(L"DLL_ASM.dll")) != NULL) {
+			filtr_asm = (filtrGaussaAsm)GetProcAddress(dll_asm, "filtrGaussa");
+			if (filtr_asm != NULL) {
+				/*Jesli poprawnie wczytano biblioteke i odnaleziono funkcje to kontynuuj*/
+				tab = new std::thread[ilosc_watkow];
+				int od = 0, to = 0;
+				for (int i = 0, j = 0; i < ilosc_watkow, j < (height * width * 3); i++, j += na_jeden_watek)
+				{
+					od = j;
+					to = j + na_jeden_watek;
+					tab[i] = std::thread(filtr_asm, bgr, height, width, od, to);
+				}
+				for (int i = 0; i < ilosc_watkow; i++)
+				{
+					tab[i].join();
+				}
 			}
 		}
 	}
@@ -166,15 +193,17 @@ int main()
 	std::clock_t start = std::clock();
 	byte *bgr = nullptr;
 	int width = 0, height = 0, padding = 0;
-	byte watki = 1; // thread::hardware_concurrency(); //rowzniez mozliwosc podania liczby watkow przez uzytkownika
+	byte watki = 6; // thread::hardware_concurrency(); //rowzniez mozliwosc podania liczby watkow przez uzytkownika
 	std::string komunikat = "Liczba wykrytych watkow: " + to_string(watki) + "\n";
 	BITMAPFILEHEADER *header = nullptr;
 	BITMAPINFOHEADER *info_header = nullptr;
 
 	wczytajBitmape(width, height, padding, bgr, komunikat, header, info_header);
 
-	utworzWatki(watki, bgr, height, width);
-
+	for (int i = 0; i < 50; i++)
+	{
+		utworzWatki(watki, bgr, height, width, true);
+	}
 	zapiszBitmape(width, height, padding, bgr, komunikat, header, info_header);
 	/*Usuwanie obiektow z pamieci*/
 	delete[] bgr;
@@ -182,6 +211,6 @@ int main()
 	delete info_header;
 	/*Koniec usuwania*/
 	cout << komunikat;
-	std::cout << "Czas wykonania programu: " << (1000 * (std::clock() - start) / CLOCKS_PER_SEC) << std::endl;
+	std::cout << "Czas wykonania programu: " << ((1000 * (std::clock() - start) / CLOCKS_PER_SEC))/1000 << std::endl;
 	getchar();
 }
