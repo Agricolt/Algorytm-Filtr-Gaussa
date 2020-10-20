@@ -10,7 +10,10 @@
 #include <ctime>
 #include <cstdio>
 
-#define NAZWA_PLIKU "huge.bmp"
+#define NAZWA_PLIKU "50x100.bmp"
+#define ILOSC_WATKOW 1
+#define CPP false
+#define ILOSC_POWTORZEN 1
 
 typedef unsigned char uchar;
 typedef unsigned int uint;

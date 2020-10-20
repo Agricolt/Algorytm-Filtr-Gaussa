@@ -193,17 +193,18 @@ int main()
 	std::clock_t start = std::clock();
 	byte *bgr = nullptr;
 	int width = 0, height = 0, padding = 0;
-	byte watki = 6; // thread::hardware_concurrency(); //rowzniez mozliwosc podania liczby watkow przez uzytkownika
+	byte watki = ILOSC_WATKOW; // thread::hardware_concurrency(); //rowzniez mozliwosc podania liczby watkow przez uzytkownika
 	std::string komunikat = "Liczba wykrytych watkow: " + to_string(watki) + "\n";
 	BITMAPFILEHEADER *header = nullptr;
 	BITMAPINFOHEADER *info_header = nullptr;
 
 	wczytajBitmape(width, height, padding, bgr, komunikat, header, info_header);
-
-	for (int i = 0; i < 50; i++)
+	wyswietl_tablice_koloru(height, width, bgr);
+	for (int i = 0; i < ILOSC_POWTORZEN; i++)
 	{
-		utworzWatki(watki, bgr, height, width, true);
+		utworzWatki(watki, bgr, height, width, CPP);
 	}
+
 	zapiszBitmape(width, height, padding, bgr, komunikat, header, info_header);
 	/*Usuwanie obiektow z pamieci*/
 	delete[] bgr;
