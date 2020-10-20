@@ -55,7 +55,7 @@ void DLL_C_API filtrGaussa(byte *bgr, int height, int width, int od, int to)
 							+ (bgr[i - pixs + 3] * matrix1[2])
 							+ /*srodkowy*/ (bgr[i - 3] * matrix1[3])
 							+ (bgr[i] * matrix1[4])
-							+ (bgr[i] * matrix1[5])
+							+ (bgr[i + 3] * matrix1[5])
 							+ /*dolny*/ bgr[i + pixs - 3] * matrix1[6]
 							+ bgr[i + pixs] * matrix1[7]
 							+ bgr[i + pixs + 3] * matrix1[8]) / suma_matrix1;

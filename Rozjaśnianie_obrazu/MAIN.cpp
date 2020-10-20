@@ -199,7 +199,7 @@ int main()
 	BITMAPINFOHEADER *info_header = nullptr;
 
 	wczytajBitmape(width, height, padding, bgr, komunikat, header, info_header);
-	wyswietl_tablice_koloru(height, width, bgr);
+
 	for (int i = 0; i < ILOSC_POWTORZEN; i++)
 	{
 		utworzWatki(watki, bgr, height, width, CPP);

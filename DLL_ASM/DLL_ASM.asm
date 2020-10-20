@@ -22,7 +22,6 @@ _height qword ?
 pixs qword ?
 trojka qword ?
 poczatek_tablicy qword ?
-iterator qword ?
 
 .code
 filtrGaussa proc e: DWORD
@@ -70,20 +69,21 @@ mov poczatek_tablicy, rcx ;odwolanie sie poprzez poczatek_tablicy jako adresu ni
 
 ;mov al, byte PTR[poczatek_tablicy] z jakiegos powodu to nie dziala mimo ze w zmiennej jest dobry adres
 ;mov al, byte PTR[rcx] ; za to to dziala mimo ze w rcx i w poczatek_tablicy jest ten sam adres
-
+mov r14, pixs
+mov r15, trojka
 POCZATEK_PETLI:
 ;mov byte PTR[rcx+4], 5
 ;mov r13, my_arr
 ;imul eax, DWORD PTR[r13+16]
 ;Tutaj czesc wykonawcza petli, RCX (r9) to iterator podstawowy (i), w R12 bedziemy liczyli kolejne wartosci iteratora
 ;pierwszy if
-mov iterator, r9
+xor r13, r13
 mov R12, r9
-sub r12, pixs
+sub r12, r14
 sub r12, 3
-cmp r12, 0
+;cmp r12, 0 niepotrzebne
 jb WARUNEK_NIESPELNIONY
-cmp r12, trojka
+cmp r12, r15
 ja WARUNEK_NIESPELNIONY
 
 ;koniec pierwszego ifa
@@ -91,29 +91,85 @@ ja WARUNEK_NIESPELNIONY
 add r12, 6 ;3 ktore odjelismy wczesniej i 3 dodatkowe
 cmp r12, 0
 jb WARUNEK_NIESPELNIONY
-cmp r12, trojka
+cmp r12, r15
 ja WARUNEK_NIESPELNIONY
 ;koniec drugiego ifa
 ;poczatek 3 ifa
-add R12, pixs
-add r12, pixs
-cmp R12, 0
+add R12, r14
+add r12, r14
+;cmp R12, 0
 jb WARUNEK_NIESPELNIONY
-cmp r12, trojka
+cmp r12, r15
 ja WARUNEK_NIESPELNIONY
 ;koniec 3 ifa
 ;poczatek 4 ifa
 sub R12, 6
-cmp R12, 0
+;cmp R12, 0
 jb WARUNEK_NIESPELNIONY
-cmp r12, trojka
+cmp r12, r15
 ja WARUNEK_NIESPELNIONY
 ;koniec 4 ifa, jesli wszystkie warunki zostaly spelnione wykonuj dalej:
+;obliczana zmienna bedzie przechowywana w rejstrze R13
+
+;gorny rzad, 1 liczba
+mov r12, r9
+sub r12, r14
+sub r12, 3
+movzx rax, byte ptr[rcx + r12]
+imul eax, dword ptr[my_arr]
+mov r13, rax
+;gorny rzad, 2 liczba
+add r12, 3 ;nie musimy odejmowac pixs poniewaz wczesniej juz odjelismy
+movzx rax, byte ptr[rcx + r12]
+imul eax, dword ptr[my_arr+4]
+add r13, rax
+;gorny rzad 3 liczba
+add r12, 3 ;jeszcze raz dodajemy 3 aby bylo +3
+movzx rax, byte ptr[rcx + r12]
+imul eax, dword ptr[my_arr+8]
+add r13, rax
+;srodkowy rzad 1 liczba
+mov r12, r9
+sub r12, 3
+movzx rax, byte ptr[rcx + r12]
+imul eax, dword ptr[my_arr+12]
+add r13, rax
+;srodkowy rzad 2 liczba
+add r12, 3
+movzx rax, byte ptr[rcx + r12]
+imul eax, dword ptr[my_arr+16]
+add r13, rax
+;srodkowy rzad 3 liczba
+add r12, 3
+movzx rax, byte ptr[rcx + r12]
+imul eax, dword ptr[my_arr+20]
+add r13, rax
+;dolny rzad 1 liczba
+mov r12, r9
+add r12, r14
+sub r12, 3
+movzx rax, byte ptr[rcx + r12]
+imul eax, dword ptr[my_arr+24]
+add r13, rax
+;dolny rzad 2 liczba
+add r12, 3
+movzx rax, byte ptr[rcx + r12]
+imul eax, dword ptr[my_arr+28]
+add r13, rax
+;dolny rzad 3 liczba
+add r12, 3
+movzx rax, byte ptr[rcx + r12]
+imul eax, dword ptr[my_arr+32]
+add r13, rax
+;wszystkie rzedy obliczone
 xor rax, rax
-mov al, byte ptr[rcx + r9]
+mov rax, r13
+xor rdx, rdx
+idiv dword ptr[suma_matrix]
+mov [rcx+ r9], al
 
 WARUNEK_NIESPELNIONY: ;jesli ktorys z warunkow nie zostal spelniony
-inc r9
+add r9, 1
 cmp r9, r10 ;jesli rejestry sa rowne to znaczy ze przetwarzanie dotarlo do konca tabeli
 jne POCZATEK_PETLI
 ;***************koniec glownej petli filtru**************
