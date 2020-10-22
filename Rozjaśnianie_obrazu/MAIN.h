@@ -11,9 +11,9 @@
 #include <cstdio>
 
 #define NAZWA_PLIKU "huge.bmp"
-#define ILOSC_WATKOW 12
-#define CPP true
-#define ILOSC_POWTORZEN 100
+#define ILOSC_WATKOW 1
+#define CPP false
+#define ILOSC_POWTORZEN 1
 
 typedef unsigned char uchar;
 typedef unsigned int uint;

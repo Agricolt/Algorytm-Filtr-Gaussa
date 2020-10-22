@@ -16,6 +16,9 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
+    <Text Include="Text.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
@@ -26,9 +29,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="DLL_ASM.asm">
-      <Filter>Source Files</Filter>
-    </None>
     <None Include="DefFile.def">
       <Filter>Source Files</Filter>
     </None>
@@ -37,5 +37,10 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="DLL_ASM.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

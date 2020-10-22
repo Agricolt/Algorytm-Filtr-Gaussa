@@ -1,0 +1,58 @@
+kod dla dzialajacego kodu w asm bez instrukcji simd
+tutaj zaczyna siê pêtla
+;gorny rzad, 1 liczba
+mov r12, r9
+sub r12, r14
+sub r12, 3
+movzx rax, byte ptr[rcx + r12]
+imul eax, 1		;dword ptr[my_arr]
+mov r13, rax
+;gorny rzad, 2 liczba
+add r12, 3 ;nie musimy odejmowac pixs poniewaz wczesniej juz odjelismy
+movzx rax, byte ptr[rcx + r12]
+imul eax, 2		;dword ptr[my_arr+4]
+add r13, rax
+;gorny rzad 3 liczba
+add r12, 3 ;jeszcze raz dodajemy 3 aby bylo +3
+movzx rax, byte ptr[rcx + r12]
+imul eax, 1		;dword ptr[my_arr+8]
+add r13, rax
+;srodkowy rzad 1 liczba
+mov r12, r9
+sub r12, 3
+movzx rax, byte ptr[rcx + r12]
+imul eax, 2		;dword ptr[my_arr+12]
+add r13, rax
+;srodkowy rzad 2 liczba
+add r12, 3
+movzx rax, byte ptr[rcx + r12]
+imul eax, 4;		dword ptr[my_arr+16]
+add r13, rax
+;srodkowy rzad 3 liczba
+add r12, 3
+movzx rax, byte ptr[rcx + r12]
+imul eax, 2		;dword ptr[my_arr+20]
+add r13, rax
+;dolny rzad 1 liczba
+mov r12, r9
+add r12, r14
+sub r12, 3
+movzx rax, byte ptr[rcx + r12]
+imul eax, 1		;	dword ptr[my_arr+24]
+add r13, rax
+;dolny rzad 2 liczba
+add r12, 3
+movzx rax, byte ptr[rcx + r12]
+imul eax, 2		;dword ptr[my_arr+28]
+add r13, rax
+;dolny rzad 3 liczba
+add r12, 3
+movzx rax, byte ptr[rcx + r12]
+imul eax, 1	;dword ptr[my_arr+32]
+add r13, rax
+;wszystkie rzedy obliczone
+xor rax, rax
+mov rax, r13
+xor rdx, rdx
+idiv dword ptr[suma_matrix] ; nie da sie przez wartosc natychmiastowa
+mov [rcx+ r9], al

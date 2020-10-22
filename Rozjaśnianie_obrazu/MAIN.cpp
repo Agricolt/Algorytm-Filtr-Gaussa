@@ -190,7 +190,6 @@ void utworzWatki(byte ilosc_watkow, byte *bgr, int height, int width, bool ktora
 
 int main()
 {
-	std::clock_t start = std::clock();
 	byte *bgr = nullptr;
 	int width = 0, height = 0, padding = 0;
 	byte watki = ILOSC_WATKOW; // thread::hardware_concurrency(); //rowzniez mozliwosc podania liczby watkow przez uzytkownika
@@ -200,10 +199,12 @@ int main()
 
 	wczytajBitmape(width, height, padding, bgr, komunikat, header, info_header);
 
+	std::clock_t start = std::clock();
 	for (int i = 0; i < ILOSC_POWTORZEN; i++)
 	{
 		utworzWatki(watki, bgr, height, width, CPP);
 	}
+	std::cout << "Czas wykonania programu: " << ((1000 * (std::clock() - start) / CLOCKS_PER_SEC)) << std::endl;
 
 	zapiszBitmape(width, height, padding, bgr, komunikat, header, info_header);
 	/*Usuwanie obiektow z pamieci*/
@@ -212,6 +213,5 @@ int main()
 	delete info_header;
 	/*Koniec usuwania*/
 	cout << komunikat;
-	std::cout << "Czas wykonania programu: " << ((1000 * (std::clock() - start) / CLOCKS_PER_SEC))/1000 << std::endl;
 	getchar();
 }
