@@ -10,11 +10,6 @@
 #include <ctime>
 #include <cstdio>
 
-#define NAZWA_PLIKU "huge.bmp"
-#define ILOSC_WATKOW 1
-#define CPP false
-#define ILOSC_POWTORZEN 1
-
 typedef unsigned char uchar;
 typedef unsigned int uint;
 typedef unsigned short ushort;
@@ -30,12 +25,12 @@ void wyswietl_tablice(int ilosc_znakow, char * temp1);
 void wyswietl_tablice_koloru(int height, int width, byte * temp1);
 
 
-bool wczytajBitmape(int &width, int &height, int &padding, byte *&bgr, std::string &komunikat, BITMAPFILEHEADER *&header,
+bool wczytajBitmape(int &width, int &height, int &padding, byte *&bgr, std::string &nazwa_pliku, BITMAPFILEHEADER *&header,
 	BITMAPINFOHEADER *&info_header);
 
 
-bool zapiszBitmape(int &width, int &height, int &padding, byte *&bgr, std::string &komunikat, BITMAPFILEHEADER *&header,
+bool zapiszBitmape(int &width, int &height, int &padding, byte *&bgr, BITMAPFILEHEADER *&header,
 	BITMAPINFOHEADER *&info_header);
 
 
-void utworzWatki(byte ilosc_watkow, byte *bgr, int height, int width, bool ktora_biblioteka);
+void utworzWatki(int ilosc_watkow, byte *bgr, int height, int width, int ktora_biblioteka);

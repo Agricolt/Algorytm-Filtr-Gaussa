@@ -33,18 +33,13 @@ void wyswietl_tablice_koloru(int height, int width, byte * temp1)
 }
 
 
-bool wczytajBitmape(int &width, int &height, int &padding, byte *&bgr, std::string &komunikat, BITMAPFILEHEADER *&header,
+bool wczytajBitmape(int &width, int &height, int &padding, byte *&bgr, std::string &nazwa_pliku, BITMAPFILEHEADER *&header,
 	BITMAPINFOHEADER *&info_header)
 {
 	/*ODCZYT*/
-	ifstream ifs(NAZWA_PLIKU, ios::binary);
+	ifstream ifs(nazwa_pliku, ios::binary);
 	/*Wczytanie naglowka pliku*/
 	char* temp = new char[sizeof(BITMAPFILEHEADER)];
-	if (ifs.good() == false) {
-		komunikat += "Nie udalo sie otworzyc pliku .bmp. Plik nie istnieje badz nie masz wystarczajacych uprawnien. Anulowanie.\n";
-		return false;
-	}
-	komunikat += "Otwarto plik\n";
 	ifs.read(temp, sizeof(BITMAPFILEHEADER));
 	header = (BITMAPFILEHEADER*)(temp);
 
@@ -52,12 +47,6 @@ bool wczytajBitmape(int &width, int &height, int &padding, byte *&bgr, std::stri
 	byte c1, c2;
 	c1 = (header->bfType) & 0xFF;	//Wyciagnij pierwszy bajt
 	c2 = ((header->bfType) >> 8) & 0xFF;//Wyciagnij drugi bajt
-	if (c1 == 'B' && c2 == 'M')
-		komunikat += "Plik jest plikiem w formacie .bmp\n";
-	else {
-		komunikat += "Plik nie jest plikiem w formacie .bmp. Anulowanie";
-		return false;
-	}
 
 	/*Wczytanie naglowka obrazu*/
 	temp = new char[sizeof(BITMAPINFOHEADER)];
@@ -98,7 +87,7 @@ bool wczytajBitmape(int &width, int &height, int &padding, byte *&bgr, std::stri
 }
 
 
-bool zapiszBitmape(int &width, int &height, int &padding, byte *&bgr, std::string &komunikat, BITMAPFILEHEADER *&header,
+bool zapiszBitmape(int &width, int &height, int &padding, byte *&bgr, BITMAPFILEHEADER *&header,
 	BITMAPINFOHEADER *&info_header)
 {
 	/*ZAPIS*/
@@ -131,20 +120,19 @@ bool zapiszBitmape(int &width, int &height, int &padding, byte *&bgr, std::strin
 }
 
 
-//ktora_biblioteka = true - DLL_C
-//ktora_biblioteka = false - DLL_ASM
-void utworzWatki(byte ilosc_watkow, byte *bgr, int height, int width, bool ktora_biblioteka)
+//ktora_biblioteka = 0 - DLL_C
+//ktora_biblioteka = 1 - DLL_ASM
+void utworzWatki(int ilosc_watkow, byte *bgr, int height, int width, int ktora_biblioteka)
 {
 	HMODULE dll_c, dll_asm;
 	filtrGaussaC filtr_c;
 	filtrGaussaAsm filtr_asm;
 	std::thread *tab = new std::thread[ilosc_watkow];
 
-	int na_jeden_watek = height * width * 3 / ilosc_watkow; //50*50 * 3/4 = 1875
-	int reszta = height % ilosc_watkow; //50%4 = 2
+	int na_jeden_watek = height * width * 3 / ilosc_watkow;
+	int reszta = height % ilosc_watkow;
 
-	//Tablice tablic podzielonych danych ktore zostana przekazane do funkcji rozmycia
-	if (ktora_biblioteka == true)
+	if (ktora_biblioteka == 0)
 	{
 		if ((dll_c = LoadLibrary(L"DLL_C.dll")) != NULL) {
 			filtr_c = (filtrGaussaC)GetProcAddress(dll_c, "filtrGaussa");
@@ -165,7 +153,7 @@ void utworzWatki(byte ilosc_watkow, byte *bgr, int height, int width, bool ktora
 			}
 		}
 	}
-	else
+	else if (ktora_biblioteka == 1)
 	{
 		if ((dll_asm = LoadLibrary(L"DLL_ASM.dll")) != NULL) {
 			filtr_asm = (filtrGaussaAsm)GetProcAddress(dll_asm, "filtrGaussa");
@@ -186,32 +174,54 @@ void utworzWatki(byte ilosc_watkow, byte *bgr, int height, int width, bool ktora
 			}
 		}
 	}
+	else
+	{
+		std::cout << "\nBlad!\n";
+		return;
+	}
 }
 
 int main()
 {
+	start:
 	byte *bgr = nullptr;
 	int width = 0, height = 0, padding = 0;
-	byte watki = ILOSC_WATKOW; // thread::hardware_concurrency(); //rowzniez mozliwosc podania liczby watkow przez uzytkownika
-	std::string komunikat = "Liczba wykrytych watkow: " + to_string(watki) + "\n";
 	BITMAPFILEHEADER *header = nullptr;
 	BITMAPINFOHEADER *info_header = nullptr;
 
-	wczytajBitmape(width, height, padding, bgr, komunikat, header, info_header);
+	int watki = std::thread::hardware_concurrency();
+	int wybor_asm = 1;
+	std::string nazwa_pliku = "kolory.bmp";
+	std::string bufor;
+	std::cout << "Zalecana liczba watkow: " + std::to_string(watki);
+	std::cout << "\nPodaj liczbe watkow (liczba od 1 do 64):\n";
+	std::cin >> bufor;
+	watki = std::stoi(bufor);
+
+	std::cout << "\nWykonanie w ASM czy C++? (1 dla ASM, 0 dla C++): \n";
+	cin >> wybor_asm;
+
+	std::cout << "\nPodaj nazwe pliku (plik musi byæ 24-bitowa bitmapa, oraz znajdowac sie tam gdzie plik .exe) :\n";
+	cin >> nazwa_pliku;
+
+	wczytajBitmape(width, height, padding, bgr, nazwa_pliku, header, info_header);
 
 	std::clock_t start = std::clock();
-	for (int i = 0; i < ILOSC_POWTORZEN; i++)
-	{
-		utworzWatki(watki, bgr, height, width, CPP);
-	}
+
+	utworzWatki(watki, bgr, height, width, wybor_asm);
+
 	std::cout << "Czas wykonania programu: " << ((1000 * (std::clock() - start) / CLOCKS_PER_SEC)) << std::endl;
 
-	zapiszBitmape(width, height, padding, bgr, komunikat, header, info_header);
+	zapiszBitmape(width, height, padding, bgr, header, info_header);
 	/*Usuwanie obiektow z pamieci*/
 	delete[] bgr;
 	delete header;
 	delete info_header;
 	/*Koniec usuwania*/
-	cout << komunikat;
+	std::cout << "Wpisz 1 aby kontynuowac: " << std::endl;
 	getchar();
+	getchar();
+	std::cin.clear();
+	system("cls");
+	goto start;
 }

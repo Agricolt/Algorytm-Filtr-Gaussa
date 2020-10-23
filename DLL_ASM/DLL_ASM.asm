@@ -114,7 +114,6 @@ cmp r12, r15
 ja WARUNEK_NIESPELNIONY
 ;koniec 4 ifa, jesli wszystkie warunki zostaly spelnione wykonuj dalej:
 ;dolny rzad
-
 mov r11, rcx
 add r11, r9
 sub r11, r14
