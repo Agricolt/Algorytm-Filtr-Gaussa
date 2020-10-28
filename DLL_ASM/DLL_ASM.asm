@@ -57,6 +57,8 @@ push r13
 push r14
 push r15
 ;******************GLOWNY PROGRAM*****************
+add rdx, 2
+add r8, 2
 ;przypisanie wartosci zmiennym
 mov od, r9
 mov to, r10
@@ -73,132 +75,51 @@ mov poczatek_tablicy, rcx ;odwolanie sie poprzez poczatek_tablicy jako adresu ni
 
 ;mov al, byte PTR[poczatek_tablicy] z jakiegos powodu to nie dziala mimo ze w zmiennej jest dobry adres
 ;mov al, byte PTR[rcx] ; za to to dziala mimo ze w rcx i w poczatek_tablicy jest ten sam adres
-mov r14, pixs
-mov r15, trojka
 ;WCZYTANIE KERNELI POZA PETLE (nie musi byc za kazdym razem wczytywany)
-movdqu xmm1, oword ptr[my_arr] ;wczytujemy od razu caly mozliwy kernel (16 bajtow kernela)
-movdqu xmm2, oword ptr[my_arr + 18] ;wczytujemy dalsza czesc kernela o przesuniecie poprzednio przetworzonego czyli 8 * 2 + 2 = 18 bajtow
-movdqu xmm3, oword ptr[my_arr + 36] ;34 + 2
+vmovdqu ymm1, ymmword ptr[my_arr] ;wczytujemy od razu caly mozliwy kernel (16 bajtow kernela)
+vmovdqu ymm2, ymmword ptr[my_arr + 18] ;wczytujemy dalsza czesc kernela o przesuniecie poprzednio przetworzonego czyli 8 * 2 + 2 = 18 bajtow
+vmovdqu ymm3, ymmword ptr[my_arr + 36] ;34 + 2
+
+mov r14, pixs
+add r14, 3
+mov r15, pixs
 POCZATEK_PETLI:
 ;Tutaj czesc wykonawcza petli, RCX (r9) to iterator podstawowy (i), w R12 bedziemy liczyli kolejne wartosci iteratora
 ;pierwszy if
-mov R12, r9
-sub r12, r14
-sub r12, 3
-;cmp r12, 0 niepotrzebne
-jb WARUNEK_NIESPELNIONY
-cmp r12, r15
-ja WARUNEK_NIESPELNIONY
-
-;koniec pierwszego ifa
-;poczatek drugiego ifa
-add r12, 6 ;3 ktore odjelismy wczesniej i 3 dodatkowe
-cmp r12, 0
-jb WARUNEK_NIESPELNIONY
-cmp r12, r15
-ja WARUNEK_NIESPELNIONY
-;koniec drugiego ifa
-;poczatek 3 ifa
-add R12, r14
-add r12, r14
-;cmp R12, 0
-jb WARUNEK_NIESPELNIONY
-cmp r12, r15
-ja WARUNEK_NIESPELNIONY
-;koniec 3 ifa
-;poczatek 4 ifa
-sub R12, 6
-;cmp R12, 0
-jb WARUNEK_NIESPELNIONY
-cmp r12, r15
-ja WARUNEK_NIESPELNIONY
 ;koniec 4 ifa, jesli wszystkie warunki zostaly spelnione wykonuj dalej:
 ;dolny rzad
 mov r11, rcx
 add r11, r9
 sub r11, r14
-sub r11, 3
 movdqu xmm0, [r11] ;wczytujemy 16 bajtow
-pmovzxbw xmm0, xmm0 ;konwertujemy pierwsze 8 bajtow z BYTE na WORD
-pmullw xmm0, xmm1 ;mnozymy 8 bajtow przez kernel ;wynik w xmm0
-;teraz trzeba sie zajac ostatnim bajtem (3 piksele to 9 bajtow BGRBGRBGR)
-movzx rsi, byte ptr [r11 + 8]
-movzx rax, word ptr[my_arr + 16] ;wczytujemy kolejne 2 bajty kernela (teraz juz przetworzone 18 bajtow)
-imul rsi, rax ;w rsi bedzie 9 bajt
+vpmovzxbw ymm0, xmm0 ;konwertujemy pierwsze 9 bajtow z BYTE na WORD
+;teraz mamy sytuacje ze wartosci pikseli sa 16bitowe i w pamieci wygladaja tak
+;BGRB GRBG R**** ****
+vpmullw ymm0, ymm0, ymm1
 ;koniec dolnego rzedu
 ;srodkowy rzad
-mov r11, rcx
-add r11, r9
-sub r11, 3
+add r11, r15
 movdqu xmm4, [r11] ;wczytujemy 16 bajtow
-pmovzxbw xmm4, xmm4 ;konwertujemy pierwsze 8 bajtow z BYTE na WORD
-pmullw xmm4, xmm2 ;mnozymy 8 bajtow przez kernel ;wynik w xmm4
-;teraz trzeba sie zajac ostatnim bajtem (3 piksele to 9 bajtow BGRBGRBGR)
-movzx r13, byte ptr [r11 + 8]
-movzx rax, word ptr[my_arr + 34] ; 18 przesuniecia + 16 wczytanych
-imul r13, rax ;w r13 bedzie 9 bajt
+vpmovzxbw ymm4, xmm4 ;konwertujemy pierwsze 9 bajtow z BYTE na WORD
+vpmullw ymm4, ymm4, ymm2
 ;koniec srodkowego rzedu
 ;gorny rzad
-mov r11, rcx
-add r11, r9
-add r11, pixs
-sub r11, 3
+add r11, r15
 movdqu xmm5, [r11] ;wczytujemy 16 bajtow
-pmovzxbw xmm5, xmm5 ;konwertujemy pierwsze 8 bajtow z BYTE na WORD
-pmullw xmm5, xmm3 ;mnozymy 8 bajtow przez kernel ;wynik w xmm5
-;teraz trzeba sie zajac ostatnim bajtem (3 piksele to 9 bajtow BGRBGRBGR)
-movzx rbp, byte ptr [r11 + 8]
-movzx rax, word ptr[my_arr + 50] ; 34 przesuniecia + 16 wczytanych
-imul rbp, rax ;w rbp bedzie 9 bajt
+vpmovzxbw ymm5, xmm5 ;konwertujemy pierwsze 9 bajtow z BYTE na WORD
+vpmullw ymm5, ymm5, ymm3
 ;koniec gornego  rzedu
 ;sumowanie
-;RAX - R
-;RBX - B
-;RDI - G
-mov rax, rsi
-add rax, r13
-add rax, rbp
-paddw xmm0, xmm4
-paddw xmm0, xmm5
-;			RAX		xmm0 
-;			(R)	 BG RGB RGB
-movd rdx, xmm0
-;dolna polowka rejestru xmm
-movzx rbx, dx ;w rbx B
+vpaddw ymm0, ymm0, ymm4
+vpaddw ymm0, ymm0, ymm5
+;BGRB GRBG R*** ****
+;***B GRBG RBGR ****
+;**** **BG RBGR BGR*
+;przesun w prawo
+vPSRLW ymm4, ymm0, 4
 
-shr rdx, 16
-movzx rdi, dx ;w rdi G
-
-shr rdx, 16
-add ax, dx ;w rsi R
-
-shr rdx, 16
-add bx, dx
-
-pextrq  rdx,  xmm0, 1
-;teraz przetwarzamy gorna polowke rejestru xmm
-add di, dx
-
-shr rdx, 16
-add ax, dx
-
-shr rdx, 16
-add bx, dx
-
-shr rdx, 16
-add di, dx
-
-;podizelic na 16
-shr rax, 4 
-shr rbx, 4
-shr rdi, 4
-;zapis
-mov [rcx+ r9], bx
-mov [rcx+ r9 + 1], di
-mov [rcx+ r9 + 2], ax
 ;koniec zapisu
-WARUNEK_NIESPELNIONY: ;jesli ktorys z warunkow nie zostal spelniony
-add r9, 1
+add r9, 3
 cmp r9, r10 ;jesli rejestry sa rowne to znaczy ze przetwarzanie dotarlo do konca tabeli
 jne POCZATEK_PETLI
 ;***************koniec glownej petli filtru**************
