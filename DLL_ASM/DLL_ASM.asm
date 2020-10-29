@@ -60,6 +60,7 @@ push r15
 ;przypisanie wartosci zmiennym
 mov od, r9
 mov to, r10
+add r8, 2
 imul r8, 3
 mov pixs, r8
 imul r8, rdx
@@ -80,39 +81,7 @@ movdqu xmm1, oword ptr[my_arr] ;wczytujemy od razu caly mozliwy kernel (16 bajto
 movdqu xmm2, oword ptr[my_arr + 18] ;wczytujemy dalsza czesc kernela o przesuniecie poprzednio przetworzonego czyli 8 * 2 + 2 = 18 bajtow
 movdqu xmm3, oword ptr[my_arr + 36] ;34 + 2
 POCZATEK_PETLI:
-;Tutaj czesc wykonawcza petli, RCX (r9) to iterator podstawowy (i), w R12 bedziemy liczyli kolejne wartosci iteratora
-;pierwszy if
-mov R12, r9
-sub r12, r14
-sub r12, 3
-;cmp r12, 0 niepotrzebne
-jb WARUNEK_NIESPELNIONY
-cmp r12, r15
-ja WARUNEK_NIESPELNIONY
-
-;koniec pierwszego ifa
-;poczatek drugiego ifa
-add r12, 6 ;3 ktore odjelismy wczesniej i 3 dodatkowe
-cmp r12, 0
-jb WARUNEK_NIESPELNIONY
-cmp r12, r15
-ja WARUNEK_NIESPELNIONY
-;koniec drugiego ifa
-;poczatek 3 ifa
-add R12, r14
-add r12, r14
-;cmp R12, 0
-jb WARUNEK_NIESPELNIONY
-cmp r12, r15
-ja WARUNEK_NIESPELNIONY
-;koniec 3 ifa
-;poczatek 4 ifa
-sub R12, 6
-;cmp R12, 0
-jb WARUNEK_NIESPELNIONY
-cmp r12, r15
-ja WARUNEK_NIESPELNIONY
-;koniec 4 ifa, jesli wszystkie warunki zostaly spelnione wykonuj dalej:
+;Tutaj czesc wykonawcza petli, RCX (r9) to iterator podstawowy (i)
 ;dolny rzad
 mov r11, rcx
 add r11, r9
@@ -127,9 +96,7 @@ movzx rax, word ptr[my_arr + 16] ;wczytujemy kolejne 2 bajty kernela (teraz juz 
 imul rsi, rax ;w rsi bedzie 9 bajt
 ;koniec dolnego rzedu
 ;srodkowy rzad
-mov r11, rcx
-add r11, r9
-sub r11, 3
+add r11, r14
 movdqu xmm4, [r11] ;wczytujemy 16 bajtow
 pmovzxbw xmm4, xmm4 ;konwertujemy pierwsze 8 bajtow z BYTE na WORD
 pmullw xmm4, xmm2 ;mnozymy 8 bajtow przez kernel ;wynik w xmm4
@@ -139,10 +106,7 @@ movzx rax, word ptr[my_arr + 34] ; 18 przesuniecia + 16 wczytanych
 imul r13, rax ;w r13 bedzie 9 bajt
 ;koniec srodkowego rzedu
 ;gorny rzad
-mov r11, rcx
-add r11, r9
-add r11, pixs
-sub r11, 3
+add r11, r14
 movdqu xmm5, [r11] ;wczytujemy 16 bajtow
 pmovzxbw xmm5, xmm5 ;konwertujemy pierwsze 8 bajtow z BYTE na WORD
 pmullw xmm5, xmm3 ;mnozymy 8 bajtow przez kernel ;wynik w xmm5
@@ -159,9 +123,12 @@ mov rax, rsi
 add rax, r13
 add rax, rbp
 paddw xmm0, xmm4
-paddw xmm0, xmm5
+paddw xmm0, xmm5 
+
 ;			RAX		xmm0 
 ;			(R)	 BG RGB RGB
+;
+;
 movd rdx, xmm0
 ;dolna polowka rejestru xmm
 movzx rbx, dx ;w rbx B

@@ -39,31 +39,19 @@ void DLL_C_API filtrGaussa(byte *bgr, int height, int width, int od, int to)
 		suma_matrix1 += matrix1[i];
 	}
 
-	int pixs = width * 3;
+	int pixs = (width+2) * 3;
 	for (int i = od; i < to; i++)
 	{
-		if ((i - pixs - 3) >= 0 && (i - pixs - 3) <= width*height*3)
-		{
-			if ((i - pixs + 3) >= 0 && (i - pixs + 3) <= width*height * 3)
-			{
-				if ((i + pixs + 3) >= 0 && (i + pixs + 3) <= width*height * 3)
-				{
-					if ((i + pixs - 3) >= 0 && (i + pixs - 3) <= width*height * 3)
-					{
-						int x = /*gorny rzad*/ ((bgr[i - pixs - 3] * matrix1[0])
-							+ (bgr[i - pixs] * matrix1[1])
-							+ (bgr[i - pixs + 3] * matrix1[2])
-							+ /*srodkowy*/ (bgr[i - 3] * matrix1[3])
-							+ (bgr[i] * matrix1[4])
-							+ (bgr[i + 3] * matrix1[5])
-							+ /*dolny*/ bgr[i + pixs - 3] * matrix1[6]
-							+ bgr[i + pixs] * matrix1[7]
-							+ bgr[i + pixs + 3] * matrix1[8]) / suma_matrix1;
-						bgr[i] = (byte)x;
-					}
-				}
-			}
-		}
+		int x = /*gorny rzad*/ ((bgr[i - pixs - 3] * matrix1[0])
+			+ (bgr[i - pixs] * matrix1[1])
+			+ (bgr[i - pixs + 3] * matrix1[2])
+			+ /*srodkowy*/ (bgr[i - 3] * matrix1[3])
+			+ (bgr[i] * matrix1[4])
+			+ (bgr[i + 3] * matrix1[5])
+			+ /*dolny*/ bgr[i + pixs - 3] * matrix1[6]
+			+ bgr[i + pixs] * matrix1[7]
+			+ bgr[i + pixs + 3] * matrix1[8]) / suma_matrix1;
+		bgr[i] = (byte)x;
 	}
 	//std::cout << (1000 * (std::clock() - start) / CLOCKS_PER_SEC) << std::endl;
 }
