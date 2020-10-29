@@ -77,95 +77,79 @@ mov poczatek_tablicy, rcx ;odwolanie sie poprzez poczatek_tablicy jako adresu ni
 mov r14, pixs
 mov r15, trojka
 ;WCZYTANIE KERNELI POZA PETLE (nie musi byc za kazdym razem wczytywany)
-movdqu xmm1, oword ptr[my_arr] ;wczytujemy od razu caly mozliwy kernel (16 bajtow kernela)
-movdqu xmm2, oword ptr[my_arr + 18] ;wczytujemy dalsza czesc kernela o przesuniecie poprzednio przetworzonego czyli 8 * 2 + 2 = 18 bajtow
-movdqu xmm3, oword ptr[my_arr + 36] ;34 + 2
+movdqu xmm0, oword ptr[my_arr] ;wczytujemy 6 bajtow
+movdqu xmm1, oword ptr[my_arr + 6]
+movdqu xmm2, oword ptr[my_arr + 12] 
+movdqu xmm3, oword ptr[my_arr + 18] 
+movdqu xmm4, oword ptr[my_arr + 24] 
+movdqu xmm5, oword ptr[my_arr + 30] 
+movdqu xmm6, oword ptr[my_arr + 36] 
+movdqu xmm7, oword ptr[my_arr + 42] 
+movdqu xmm8, oword ptr[my_arr + 48] 
+;**********************************
+;Rejestry od xmm0 do xmm8 wlacznie maja macierz w sobie
+;Rejestry od xmm9 do xmm15 maja dane
+;*******************************************************
 POCZATEK_PETLI:
 ;Tutaj czesc wykonawcza petli, RCX (r9) to iterator podstawowy (i)
-;dolny rzad
 mov r11, rcx
 add r11, r9
 sub r11, r14
 sub r11, 3
-movdqu xmm0, [r11] ;wczytujemy 16 bajtow
-pmovzxbw xmm0, xmm0 ;konwertujemy pierwsze 8 bajtow z BYTE na WORD
-pmullw xmm0, xmm1 ;mnozymy 8 bajtow przez kernel ;wynik w xmm0
-;teraz trzeba sie zajac ostatnim bajtem (3 piksele to 9 bajtow BGRBGRBGR)
-movzx rsi, byte ptr [r11 + 8]
-movzx rax, word ptr[my_arr + 16] ;wczytujemy kolejne 2 bajty kernela (teraz juz przetworzone 18 bajtow)
-imul rsi, rax ;w rsi bedzie 9 bajt
-;koniec dolnego rzedu
-;srodkowy rzad
+pmovzxbw xmm9, [r11]
+add r11, 3
+pmovzxbw xmm10, [r11]
+add r11, 3
+pmovzxbw xmm11, [r11]
+
 add r11, r14
-movdqu xmm4, [r11] ;wczytujemy 16 bajtow
-pmovzxbw xmm4, xmm4 ;konwertujemy pierwsze 8 bajtow z BYTE na WORD
-pmullw xmm4, xmm2 ;mnozymy 8 bajtow przez kernel ;wynik w xmm4
-;teraz trzeba sie zajac ostatnim bajtem (3 piksele to 9 bajtow BGRBGRBGR)
-movzx r13, byte ptr [r11 + 8]
-movzx rax, word ptr[my_arr + 34] ; 18 przesuniecia + 16 wczytanych
-imul r13, rax ;w r13 bedzie 9 bajt
-;koniec srodkowego rzedu
-;gorny rzad
+pmovzxbw xmm12, [r11]
+sub r11, 3
+pmovzxbw xmm13, [r11]
+sub r11, 3
+pmovzxbw xmm14, [r11]
+
+pmullw xmm9, xmm0
+pmullw xmm10, xmm1
+pmullw xmm11, xmm2
+
+pmullw xmm12, xmm3
+pmullw xmm13, xmm4
+pmullw xmm14, xmm5
+
+paddw xmm9, xmm10
+paddw xmm11, xmm12
+paddw xmm9, xmm15
+paddw xmm13, xmm14
+paddw xmm9, xmm11
+paddw xmm9, xmm13
+
 add r11, r14
-movdqu xmm5, [r11] ;wczytujemy 16 bajtow
-pmovzxbw xmm5, xmm5 ;konwertujemy pierwsze 8 bajtow z BYTE na WORD
-pmullw xmm5, xmm3 ;mnozymy 8 bajtow przez kernel ;wynik w xmm5
-;teraz trzeba sie zajac ostatnim bajtem (3 piksele to 9 bajtow BGRBGRBGR)
-movzx rbp, byte ptr [r11 + 8]
-movzx rax, word ptr[my_arr + 50] ; 34 przesuniecia + 16 wczytanych
-imul rbp, rax ;w rbp bedzie 9 bajt
-;koniec gornego  rzedu
-;sumowanie
-;RAX - R
-;RBX - B
-;RDI - G
-mov rax, rsi
-add rax, r13
-add rax, rbp
-paddw xmm0, xmm4
-paddw xmm0, xmm5 
+pmovzxbw xmm10, [r11]
+add r11, 3
+pmovzxbw xmm11, [r11]
+add r11, 3
+pmovzxbw xmm12, [r11]
 
-;			RAX		xmm0 
-;			(R)	 BG RGB RGB
-;
-;
-movd rdx, xmm0
-;dolna polowka rejestru xmm
-movzx rbx, dx ;w rbx B
+pmullw xmm10, xmm6
+pmullw xmm11, xmm7
+pmullw xmm12, xmm8
 
-shr rdx, 16
-movzx rdi, dx ;w rdi G
+paddw xmm9, xmm10
+paddw xmm9, xmm11
+paddw xmm9, xmm12
+;podziel na 16
+psrlw xmm9, 4
 
-shr rdx, 16
-add ax, dx ;w rsi R
+pextrw rax, xmm9, 0
+pextrw rdx, xmm9, 1
+pextrw rdi, xmm9, 2
 
-shr rdx, 16
-add bx, dx
-
-pextrq  rdx,  xmm0, 1
-;teraz przetwarzamy gorna polowke rejestru xmm
-add di, dx
-
-shr rdx, 16
-add ax, dx
-
-shr rdx, 16
-add bx, dx
-
-shr rdx, 16
-add di, dx
-
-;podizelic na 16
-shr rax, 4 
-shr rbx, 4
-shr rdi, 4
-;zapis
-mov [rcx+ r9], bx
-mov [rcx+ r9 + 1], di
-mov [rcx+ r9 + 2], ax
-;koniec zapisu
+mov [rcx+ r9], al
+mov [rcx+ r9 + 1], dl
+mov [rcx+ r9 + 2], dil
 WARUNEK_NIESPELNIONY: ;jesli ktorys z warunkow nie zostal spelniony
-add r9, 1
+add r9, 3
 cmp r9, r10 ;jesli rejestry sa rowne to znaczy ze przetwarzanie dotarlo do konca tabeli
 jne POCZATEK_PETLI
 ;***************koniec glownej petli filtru**************

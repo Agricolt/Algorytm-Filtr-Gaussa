@@ -190,28 +190,27 @@ int main()
 	BITMAPINFOHEADER *info_header = nullptr;
 
 	int watki = 12;
-	//int wybor_asm = 1;
-	//std::string nazwa_pliku = "kolory.bmp";
-	//std::string bufor;
-	//std::cout << "Zalecana liczba watkow: " + std::to_string(watki);
-	//std::cout << "\nPodaj liczbe watkow (liczba od 1 do 64):\n";
-	//std::cin >> bufor;
-	//watki = std::stoi(bufor);
+	int wybor_asm = 1;
+	std::string nazwa_pliku = "kolory.bmp";
+	std::string bufor;
+	std::cout << "Zalecana liczba watkow: " + std::to_string(watki);
+	std::cout << "\nPodaj liczbe watkow (liczba od 1 do 64):\n";
+	std::cin >> bufor;
+	watki = std::stoi(bufor);
 
-	//std::cout << "\nWykonanie w ASM czy C++? (1 dla ASM, 0 dla C++): \n";
-	//cin >> wybor_asm;
+	std::cout << "\nWykonanie w ASM czy C++? (1 dla ASM, 0 dla C++): \n";
+	cin >> wybor_asm;
 
-	//std::cout << "\nPodaj nazwe pliku (plik musi byæ 24-bitowa bitmapa, oraz znajdowac sie tam gdzie plik .exe) :\n";
-	//cin >> nazwa_pliku;
-	string nazwa_pliku = "50x100.bmp";
+	std::cout << "\nPodaj nazwe pliku (plik musi byc 24-bitowa bitmapa, oraz znajdowac sie tam gdzie plik .exe) :\n";
+	cin >> nazwa_pliku;
 
 	wczytajBitmape(width, height, padding, bgr, nazwa_pliku, header, info_header);
 
 	std::clock_t start = std::clock();
 
-	utworzWatki(watki, bgr+(width*3)+3, height-2, width-2, 1);
+	utworzWatki(watki, bgr+(width*3)+3, height-2, width-2, wybor_asm);
 
-	std::cout << "Czas wykonania programu: " << ((1000 * (std::clock() - start) / CLOCKS_PER_SEC)) << std::endl;
+	std::cout << "Czas wykonania programu (ms): " << ((1000 * (std::clock() - start) / CLOCKS_PER_SEC)) << std::endl;
 
 	zapiszBitmape(width, height, padding, bgr, header, info_header);
 	/*Usuwanie obiektow z pamieci*/
