@@ -164,7 +164,7 @@ void utworzWatki(int ilosc_watkow, byte *bgr, int height, int width, int ktora_b
 				for (int i = 0, j = 0; i < ilosc_watkow, j < (height * width * 3); i++, j += na_jeden_watek)
 				{
 					od = j;
-					to = j + na_jeden_watek;
+					to = od + na_jeden_watek;
 					tab[i] = std::thread(filtr_asm, bgr, height, width, od, to);
 				}
 				for (int i = 0; i < ilosc_watkow; i++)
@@ -188,9 +188,9 @@ int main()
 	int width = 0, height = 0, padding = 0;
 	BITMAPFILEHEADER *header = nullptr;
 	BITMAPINFOHEADER *info_header = nullptr;
-
-	int watki = 12;
-	int wybor_asm = 1;
+	int watki = std::thread::hardware_concurrency();
+	int wybor_asm = 0;
+	
 	std::string nazwa_pliku = "kolory.bmp";
 	std::string bufor;
 	std::cout << "Zalecana liczba watkow: " + std::to_string(watki);
@@ -204,15 +204,16 @@ int main()
 	std::cout << "\nPodaj nazwe pliku (plik musi byc 24-bitowa bitmapa, oraz znajdowac sie tam gdzie plik .exe) :\n";
 	cin >> nazwa_pliku;
 
+
 	wczytajBitmape(width, height, padding, bgr, nazwa_pliku, header, info_header);
 
 	std::clock_t start = std::clock();
-
-	utworzWatki(watki, bgr+(width*3)+3, height-2, width-2, wybor_asm);
-
-	std::cout << "Czas wykonania programu (ms): " << ((1000 * (std::clock() - start) / CLOCKS_PER_SEC)) << std::endl;
+	utworzWatki(watki, bgr, height, width, wybor_asm);
+	std::cout << "Czas wykonania programu (ms): " << ((1000 * (std::clock() - start) / CLOCKS_PER_SEC)) << " dla " << watki << " watkow." << std::endl;
 
 	zapiszBitmape(width, height, padding, bgr, header, info_header);
+
+
 	/*Usuwanie obiektow z pamieci*/
 	delete[] bgr;
 	delete header;

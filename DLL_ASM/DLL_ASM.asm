@@ -1,7 +1,6 @@
 .const
 
 .data
-my_oword oword 12297848147757817309
 
 my_arr:
 word 1 
@@ -60,7 +59,6 @@ push r15
 ;przypisanie wartosci zmiennym
 mov od, r9
 mov to, r10
-add r8, 2
 imul r8, 3
 mov pixs, r8
 imul r8, rdx
@@ -80,9 +78,11 @@ mov r15, trojka
 movdqu xmm0, oword ptr[my_arr] ;wczytujemy 6 bajtow
 movdqu xmm1, oword ptr[my_arr + 6]
 movdqu xmm2, oword ptr[my_arr + 12] 
+
 movdqu xmm3, oword ptr[my_arr + 18] 
 movdqu xmm4, oword ptr[my_arr + 24] 
 movdqu xmm5, oword ptr[my_arr + 30] 
+
 movdqu xmm6, oword ptr[my_arr + 36] 
 movdqu xmm7, oword ptr[my_arr + 42] 
 movdqu xmm8, oword ptr[my_arr + 48] 
@@ -91,7 +91,39 @@ movdqu xmm8, oword ptr[my_arr + 48]
 ;Rejestry od xmm9 do xmm15 maja dane
 ;*******************************************************
 POCZATEK_PETLI:
-;Tutaj czesc wykonawcza petli, RCX (r9) to iterator podstawowy (i)
+;Tutaj czesc wykonawcza petli, RCX (r9) to iterator podstawowy (i), w R12 bedziemy liczyli kolejne wartosci iteratora
+;pierwszy if
+mov R12, r9
+sub r12, r14
+sub r12, 3
+;cmp r12, 0 niepotrzebne
+jb WARUNEK_NIESPELNIONY
+cmp r12, r15
+ja WARUNEK_NIESPELNIONY
+;koniec pierwszego ifa
+;poczatek drugiego ifa
+add r12, 6 ;3 ktore odjelismy wczesniej i 3 dodatkowe
+cmp r12, 0
+jb WARUNEK_NIESPELNIONY
+cmp r12, r15
+ja WARUNEK_NIESPELNIONY
+;koniec drugiego ifa
+;poczatek 3 ifa
+add R12, r14
+add r12, r14
+;cmp R12, 0
+jb WARUNEK_NIESPELNIONY
+cmp r12, r15
+ja WARUNEK_NIESPELNIONY
+;koniec 3 ifa
+;poczatek 4 ifa
+sub R12, 6
+;cmp R12, 0
+jb WARUNEK_NIESPELNIONY
+cmp r12, r15
+ja WARUNEK_NIESPELNIONY
+;koniec 4 ifa, jesli wszystkie warunki zostaly spelnione wykonuj dalej:
+;dolny rzad
 mov r11, rcx
 add r11, r9
 sub r11, r14
